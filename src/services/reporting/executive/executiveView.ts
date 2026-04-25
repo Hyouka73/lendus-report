@@ -22,7 +22,7 @@ function wrapText(text: string, maxWidth: number, font: any, fontSize: number): 
   return lines;
 }
 
-export async function drawExecutiveReport(datos: DatosReporte): Promise<Uint8Array> {
+export async function drawExecutiveReport(datos: DatosReporte, graficaBase64: string): Promise<Uint8Array> {
   const pdfDoc = await PDFDocument.create();
   const page = pdfDoc.addPage([612, 792]); // Tamaño Carta
   const { width, height } = page.getSize();
@@ -122,8 +122,32 @@ export async function drawExecutiveReport(datos: DatosReporte): Promise<Uint8Arr
     color: colors.divider 
   });
 
-  // ─── 4. CUERPO TÉCNICO ──────────────────────────────────────────────────────
-  currentY -= 40;
+  // ─── 4. GRÁFICA DE CONCENTRACIÓN (D3.JS) ────────────────────────────────────
+  if (graficaBase64) {
+    try {
+      // Limpiar prefijo base64 si existe
+      const base64Data = graficaBase64.replace(/^data:image\/\w+;base64,/, '');
+      const chartImage = await pdfDoc.embedPng(base64Data);
+      
+      const chartHeight = 230; // Mantener relación de aspecto profesional
+      currentY -= (chartHeight + 25);
+
+      page.drawImage(chartImage, {
+        x: margin,
+        y: currentY,
+        width: contentWidth,
+        height: chartHeight,
+      });
+
+      currentY -= 15; // Espacio post-gráfica
+    } catch (error) {
+      console.error('[PDF-Lib] Error al incrustar la gráfica:', error);
+      currentY -= 20;
+    }
+  }
+
+  // ─── 5. CUERPO TÉCNICO ──────────────────────────────────────────────────────
+  currentY -= 25;
   const leftColWidth = contentWidth * 0.35;
   const rightColX = margin + leftColWidth + 30;
   const rightColWidth = contentWidth - leftColWidth - 30;
@@ -169,7 +193,7 @@ export async function drawExecutiveReport(datos: DatosReporte): Promise<Uint8Arr
     obsY -= 8;
   });
 
-  // ─── 5. FOOTER DE PRECISIÓN ─────────────────────────────────────────────────
+  // ─── 6. FOOTER DE PRECISIÓN ─────────────────────────────────────────────────
   const footerY = 45;
   page.drawLine({ start: { x: margin, y: footerY + 15 }, end: { x: width - margin, y: footerY + 15 }, thickness: 0.5, color: colors.divider });
   

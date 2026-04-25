@@ -27,6 +27,10 @@ export interface DatosReporte {
     f: string;
     x: string;
   };
+  distribucionProductos: {
+    producto: string;
+    monto: string;
+  }[];
   observaciones: string[];
   fechaEmision: string;
 }

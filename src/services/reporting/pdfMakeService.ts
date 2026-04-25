@@ -27,14 +27,58 @@ export async function exportTableWithPdfMake(
     { header: 'Estatus', field: 'estatus' },
   ];
 
-  const tableHeader = activeCols.map(col => ({
+  // Inyectamos la columna de Salud del Crédito de forma consistente
+  const displayCols = [
+    ...activeCols,
+    { header: 'Salud del Crédito', field: 'salud_credito' as any }
+  ];
+
+  const tableHeader = displayCols.map(col => ({
     text: col.header,
     style: 'tableHeader',
-    alignment: (col.field === 'monto_credito' || col.field === 'saldo_pendiente') ? 'right' : 'left'
+    alignment: (col.field === 'monto_credito' || col.field === 'saldo_pendiente') 
+      ? 'right' 
+      : (col.field === 'salud_credito' ? 'center' : 'left')
   }));
 
-  const tableRows = rows.map(p => activeCols.map(col => {
-    let val = p[col.field];
+  const tableRows = rows.map(p => displayCols.map(col => {
+    // Caso especial: Columna Visual de Salud del Crédito
+    if (col.field === 'salud_credito') {
+      const progreso = Math.min(100, Math.max(0, (1 - (p.saldo_pendiente / p.monto_credito)) * 100));
+      
+      let colorCode = '#3B82F6'; // Azul: Activo (default)
+      if (p.estatus === 'Pagado' || progreso >= 100) {
+        colorCode = '#10B981'; // Verde
+      } else if (p.estatus === 'Moroso') {
+        colorCode = '#EF4444'; // Rojo
+      }
+
+      return {
+        margin: [0, 2, 0, 0],
+        canvas: [
+          {
+            type: 'rect',
+            x: 0,
+            y: 0,
+            w: 80,
+            h: 6,
+            color: '#E2E8F0',
+            r: 3
+          },
+          {
+            type: 'rect',
+            x: 0,
+            y: 0,
+            w: (progreso / 100) * 80,
+            h: 6,
+            color: colorCode,
+            r: 3
+          }
+        ]
+      };
+    }
+
+    let val = p[col.field as keyof Persona];
     
     if (col.field === 'monto_credito' || col.field === 'saldo_pendiente') {
       return { 
@@ -70,7 +114,7 @@ export async function exportTableWithPdfMake(
       {
         table: { 
           headerRows: 1, 
-          widths: activeCols.map(() => 'auto'),
+          widths: displayCols.map(col => col.field === 'salud_credito' ? 80 : 'auto'),
           body: tableBody 
         },
         layout: 'lightHorizontalLines'

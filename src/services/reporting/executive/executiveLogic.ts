@@ -15,6 +15,7 @@ export function processExecutiveData(rows: Persona[], periodo: { inicio: string;
   
   const countGeneros = { M: 0, F: 0, X: 0 };
   const volumenPorEstado: Record<string, number> = {};
+  const volumenPorProducto: Record<string, number> = {};
   const totalCuentas = rows.length;
 
   for (const p of rows) {
@@ -36,6 +37,7 @@ export function processExecutiveData(rows: Persona[], periodo: { inicio: string;
     }
 
     volumenPorEstado[p.estado] = (volumenPorEstado[p.estado] || 0) + monto;
+    volumenPorProducto[p.producto] = (volumenPorProducto[p.producto] || 0) + monto;
   }
 
   const capitalRecuperado = montoOriginado - saldoTotal;
@@ -53,6 +55,14 @@ export function processExecutiveData(rows: Persona[], periodo: { inicio: string;
     .map(([estado, vol]) => ({
       estado,
       volumen: `$${vol.toLocaleString('es-MX')}`
+    }));
+
+  // Distribución por Producto para la Gráfica
+  const distribucionProductos = Object.entries(volumenPorProducto)
+    .sort(([, a], [, b]) => b - a)
+    .map(([producto, monto]) => ({
+      producto,
+      monto: `$${monto.toLocaleString('es-MX')}`
     }));
 
   const formatPercent = (val: number) => totalCuentas > 0 
@@ -88,6 +98,7 @@ export function processExecutiveData(rows: Persona[], periodo: { inicio: string;
       f: formatPercent(countGeneros.F),
       x: formatPercent(countGeneros.X),
     },
+    distribucionProductos,
     observaciones,
     fechaEmision: new Date().toLocaleDateString('es-MX', { 
       day: '2-digit', 

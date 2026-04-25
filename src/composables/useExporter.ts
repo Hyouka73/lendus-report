@@ -3,6 +3,7 @@ import type { Persona } from '../types';
 import { exportTableWithPdfMake } from '../services/reporting/pdfMakeService';
 import { processExecutiveData } from '../services/reporting/executive/executiveLogic';
 import { drawExecutiveReport } from '../services/reporting/executive/executiveView';
+import { generateProductChart } from '../services/reporting/executive/chartGenerator';
 
 /**
  * Composables Orchestrator para la exportación de reportes.
@@ -32,8 +33,11 @@ export function useExporter() {
     // 1. El Cerebro calcula la data
     const datosProcesados = processExecutiveData(rows, rango);
 
+    // 1.5 Generar gráfica automáticamente desde los datos procesados
+    const graficaAuto = await generateProductChart(datosProcesados.distribucionProductos);
+
     // 2. El Pintor genera el binario
-    const pdfBytes = await drawExecutiveReport(datosProcesados);
+    const pdfBytes = await drawExecutiveReport(datosProcesados, graficaAuto);
 
     // 3. Descarga del archivo
     const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
