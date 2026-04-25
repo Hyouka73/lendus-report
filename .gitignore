@@ -44,3 +44,5 @@ desktop.ini
 # Testing
 coverage/
 test-results/
+
+.vercel
